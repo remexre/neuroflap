@@ -1,0 +1,14 @@
+[package]
+name = "neuroflap-render"
+version = "0.1.0"
+authors = ["Nathan Ringo <remexre@gmail.com>"]
+
+[dependencies]
+failure = "0.1.1"
+futures = "0.1.19"
+futures-timer = "0.1.1"
+log = "0.4.1"
+neuroflap-world = { path = "../world" }
+vulkano = "0.9.0"
+vulkano-win = "0.9.0"
+winit = "0.11.2"

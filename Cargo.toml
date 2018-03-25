@@ -1,0 +1,23 @@
+[workspace]
+members = [
+	".",
+	"control/player",
+	"render",
+	"world",
+]
+
+[package]
+name = "neuroflap"
+version = "0.1.0"
+authors = ["Nathan Ringo <remexre@gmail.com>"]
+
+[dependencies]
+failure = "0.1.1"
+futures = "0.1.19"
+log = "0.4.1"
+neuroflap-control-player = { path = "control/player" }
+neuroflap-render = { path = "render" }
+neuroflap-world = { path = "world" }
+stderrlog = { git = "https://github.com/cardoe/stderrlog-rs.git" }
+structopt = "0.2.5"
+tokio = "0.1.4"
