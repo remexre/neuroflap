@@ -1,5 +1,4 @@
 //! The renderer for neuroflap.
-#![feature(conservative_impl_trait)]
 #![warn(missing_docs)]
 
 #[macro_use]
@@ -24,7 +23,7 @@ use std::sync::Arc;
 
 use vulkano::descriptor::PipelineLayoutAbstract;
 use vulkano::device::{Device, Queue};
-use vulkano::framebuffer::{RenderPass, RenderPassDesc};
+use vulkano::framebuffer::RenderPassAbstract;
 use vulkano::image::SwapchainImage;
 use vulkano::pipeline::GraphicsPipeline;
 use vulkano::pipeline::vertex::SingleBufferDefinition;
@@ -41,14 +40,16 @@ const DEFAULT_HEIGHT: u32 = 480;
 pub struct Renderer {
     device: Arc<Device>,
     images: Vec<Arc<SwapchainImage<Window>>>,
-    pipeline: GraphicsPipeline<
-        SingleBufferDefinition<Vertex>,
-        Box<PipelineLayoutAbstract + Sync + Send>,
-        Arc<RenderPass<impl RenderPassDesc>>,
+    pipeline: Arc<
+        GraphicsPipeline<
+            SingleBufferDefinition<Vertex>,
+            Box<PipelineLayoutAbstract + Sync + Send>,
+            Arc<RenderPassAbstract + Send + Sync>,
+        >,
     >,
     queue: Arc<Queue>,
     recreate_swapchain: bool,
-    render_pass: Arc<RenderPass<impl RenderPassDesc>>,
+    render_pass: Arc<RenderPassAbstract + Send + Sync>,
     surface: Arc<Surface<Window>>,
     swapchain: Arc<Swapchain<Window>>,
 }

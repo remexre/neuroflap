@@ -2,10 +2,13 @@ use std::sync::Arc;
 
 use failure::Error;
 use neuroflap_world::World;
-use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder};
+use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
+use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder,
+                              DynamicState};
 use vulkano::format::ClearValue;
 use vulkano::framebuffer::Framebuffer;
 use vulkano::image::ImageViewAccess;
+use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain::{acquire_next_image, AcquireError};
 use vulkano::sync::GpuFuture;
 
@@ -14,6 +17,15 @@ use Renderer;
 #[derive(Clone, Copy, Debug)]
 pub struct Vertex {
     position: [f32; 2],
+}
+
+impl Vertex {
+    /// Creates a new Vertex.
+    pub fn new(x: f32, y: f32) -> Vertex {
+        Vertex {
+            position: [x, y],
+        }
+    }
 }
 
 impl_vertex!(Vertex, position);
@@ -58,7 +70,7 @@ impl Renderer {
     }
 
     /// Builds a buffer of draw commands for rendering the world.
-    fn draw_world<I: ImageViewAccess + Send + Sync>(
+    fn draw_world<I: ImageViewAccess + Send + Sync + 'static>(
         &mut self,
         world: &World,
         image: I,
@@ -68,13 +80,36 @@ impl Renderer {
         ).add(image)?
             .build()?);
 
-        let dynamic_state = unimplemented!();
-        let vertex_buffer = unimplemented!();
+        let dims = self.swapchain.dimensions();
+        let dynamic_state = DynamicState {
+            viewports: Some(vec![
+                Viewport {
+                    origin: [0.0, 0.0],
+                    dimensions: [dims[0] as f32, dims[1] as f32],
+                    depth_range: 0.0..1.0,
+                },
+            ]),
+            ..DynamicState::none()
+        };
+
+        let vertex_buffer = CpuAccessibleBuffer::from_iter(
+            self.device.clone(),
+            BufferUsage::all(),
+            vec![
+                Vertex::new(-0.5, -0.25),
+                Vertex::new(0.0, 0.5),
+                Vertex::new(0.25, -0.1),
+            ].into_iter(),
+        ).unwrap();
 
         AutoCommandBufferBuilder::primary_one_time_submit(
             self.device.clone(),
             self.queue.family(),
-        )?.begin_render_pass(framebuffer, false, vec![0.0, 0.0, 1.0, 1.0])?
+        )?.begin_render_pass(
+            framebuffer,
+            false,
+            vec![ClearValue::Float([0.0, 0.0, 1.0, 1.0])],
+        )?
             .draw(
                 self.pipeline.clone(),
                 dynamic_state,

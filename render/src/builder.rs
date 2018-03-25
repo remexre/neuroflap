@@ -3,7 +3,7 @@ use std::sync::Arc;
 use failure::{err_msg, Error};
 use vulkano::descriptor::PipelineLayoutAbstract;
 use vulkano::device::{Device, Queue};
-use vulkano::framebuffer::{RenderPass, RenderPassDesc, Subpass};
+use vulkano::framebuffer::{RenderPassAbstract, Subpass};
 use vulkano::image::SwapchainImage;
 use vulkano::instance::{Instance, PhysicalDevice, QueueFamily};
 use vulkano::pipeline::GraphicsPipeline;
@@ -171,12 +171,14 @@ fn build_pipeline<W>(
     swapchain: Arc<Swapchain<W>>,
 ) -> Result<
     (
-        GraphicsPipeline<
-            SingleBufferDefinition<Vertex>,
-            Box<PipelineLayoutAbstract + Send + Sync + 'static>,
-            Arc<RenderPass<impl RenderPassDesc>>,
+        Arc<
+            GraphicsPipeline<
+                SingleBufferDefinition<Vertex>,
+                Box<PipelineLayoutAbstract + Send + Sync + 'static>,
+                Arc<RenderPassAbstract + Send + Sync>,
+            >,
         >,
-        Arc<RenderPass<impl RenderPassDesc>>,
+        Arc<RenderPassAbstract + Send + Sync>,
     ),
     Error,
 > {
@@ -193,7 +195,7 @@ fn build_pipeline<W>(
                     color: [color],
                     depth_stencil: {}
                 }
-            )?);
+            )?) as Arc<RenderPassAbstract + Send + Sync>;
 
     let vert_shader = ::shaders::vert::Shader::load(device.clone())?;
     let frag_shader = ::shaders::frag::Shader::load(device.clone())?;
@@ -201,10 +203,11 @@ fn build_pipeline<W>(
     let pipeline = GraphicsPipeline::start()
         .vertex_input_single_buffer::<Vertex>()
         .vertex_shader(vert_shader.main_entry_point(), ())
+        .triangle_list()
         .viewports_dynamic_scissors_irrelevant(1)
         .fragment_shader(frag_shader.main_entry_point(), ())
         .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
         .build(device)?;
 
-    Ok((pipeline, render_pass))
+    Ok((Arc::new(pipeline), render_pass))
 }
