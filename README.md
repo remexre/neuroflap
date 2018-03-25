@@ -6,6 +6,8 @@ The actual Flappy Bird game is rendered by Vulkan, and is playable by a human.
 
 ## Installing
 
+Requires `rustc` 1.25 or later.
+
 Run `cargo install` to install neuroflap with all modes.
 
 To install fewer modes, instead run `cargo install --no-default-features --features MODES`, where `MODES` is a comma-separated list of:

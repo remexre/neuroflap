@@ -2,15 +2,14 @@ extern crate failure;
 extern crate futures;
 #[macro_use]
 extern crate log;
-#[cfg(feature = "neuroflap_control_player")]
+#[cfg(feature = "neuroflap-control-player")]
 extern crate neuroflap_control_player;
-#[cfg(feature = "neuroflap_render")]
+#[cfg(feature = "neuroflap-render")]
 extern crate neuroflap_render;
 extern crate neuroflap_world;
 extern crate stderrlog;
 #[macro_use]
 extern crate structopt;
-extern crate tokio;
 
 #[cfg(feature = "play")]
 mod play;
@@ -18,6 +17,7 @@ mod play;
 mod simulate;
 #[cfg(feature = "train")]
 mod train;
+mod util;
 
 use std::process::exit;
 

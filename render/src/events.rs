@@ -33,7 +33,9 @@ impl Stream for Events {
             let mut buffer = Vec::new();
             swap(&mut buffer, &mut self.buffer);
             self.event_loop.poll_events(|event| {
-                buffer.push(convert_event(event));
+                if let Some(event) = convert_event(event) {
+                    buffer.push(event);
+                }
             });
             buffer.reverse();
             swap(&mut buffer, &mut self.buffer);
@@ -42,14 +44,25 @@ impl Stream for Events {
             if self.buffer.is_empty() {
                 Ok(Async::NotReady)
             } else {
+                debug!("Got {} events", self.buffer.len());
                 self.poll()
             }
         }
     }
 }
 
-fn convert_event(event: WinitEvent) -> Event {
+fn convert_event(event: WinitEvent) -> Option<Event> {
+    use winit::{DeviceEvent, VirtualKeyCode};
+
     match event {
-        _ => unimplemented!("TODO convert_event({:?})", event),
+        WinitEvent::DeviceEvent {
+            event: DeviceEvent::Key(key),
+            ..
+        } => match key.virtual_keycode {
+            Some(VirtualKeyCode::Escape) => Some(Event::Quit),
+            Some(VirtualKeyCode::Space) => Some(Event::Jump),
+            _ => None,
+        },
+        _ => None,
     }
 }

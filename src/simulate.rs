@@ -1,5 +1,4 @@
 use failure::Error;
-use neuroflap_world::{Event, World};
 
 /// Options taken by the `simulate` subcommand.
 #[derive(Debug, StructOpt)]

@@ -20,7 +20,6 @@ neuroflap-render = { path = "render", optional = true }
 neuroflap-world = { path = "world" }
 stderrlog = { git = "https://github.com/cardoe/stderrlog-rs.git" }
 structopt = "0.2.5"
-tokio = "0.1.4"
 
 [features]
 default = ["play", "simulate", "train"]

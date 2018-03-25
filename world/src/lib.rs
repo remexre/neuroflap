@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 mod controller;
 mod event;
 mod world;
