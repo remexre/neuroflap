@@ -1,15 +1,10 @@
 use std::mem::swap;
 
 use futures::{Async, Stream};
+use neuroflap_world::Event;
 use winit::{Event as WinitEvent, EventsLoop};
 
 use Renderer;
-
-/// An input event.
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub enum Event {
-    TimerTick,
-}
 
 /// Events from a window.
 pub struct Events {

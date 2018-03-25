@@ -20,7 +20,6 @@ use vulkano::swapchain::Surface;
 use winit::Window;
 
 pub use builder::Builder;
-pub use events::Event;
 
 /// The rendering subsystem.
 pub struct Renderer {
