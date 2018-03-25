@@ -20,9 +20,12 @@ impl Options {
         let mut timer = Instant::now();
         while keep_going {
             // Handle events.
-            take_ready(&mut events, |event| match event {
-                Event::Quit => keep_going = false,
-                _ => unimplemented!("{:#?}", event),
+            take_ready(&mut events, |event| {
+                debug!("Got event {:?}", event);
+                match event {
+                    Event::Jump => world.velocity = 1.0,
+                    Event::Quit => keep_going = false,
+                }
             })?;
 
             // Update physics.

@@ -1,14 +1,19 @@
 use std::sync::Arc;
 
 use failure::{err_msg, Error};
+use vulkano::descriptor::PipelineLayoutAbstract;
 use vulkano::device::{Device, Queue};
+use vulkano::framebuffer::{RenderPass, RenderPassDesc, Subpass};
 use vulkano::image::SwapchainImage;
 use vulkano::instance::{Instance, PhysicalDevice, QueueFamily};
+use vulkano::pipeline::GraphicsPipeline;
+use vulkano::pipeline::vertex::SingleBufferDefinition;
 use vulkano::swapchain::{Surface, Swapchain};
 use vulkano_win::VkSurfaceBuild;
 use winit::{EventsLoop, WindowBuilder};
 
 use events::Events;
+use render::Vertex;
 use {Renderer, DEFAULT_HEIGHT, DEFAULT_WIDTH};
 
 /// A builder for a Renderer and an Events.
@@ -24,35 +29,38 @@ impl Builder {
         let instance = create_instance()?;
         debug!("Successfully created Vulkan instance.");
 
-        let (device, queue) = {
-            let physical_device = choose_physical_device(&instance)?;
-            info!("Using device {:?}", physical_device.name());
-
-            let qf = choose_queue_family(physical_device)?;
-            let (device, mut queues) = build_device(physical_device, qf)?;
-            ensure!(queues.len() > 0, "Device has no queues");
-            (device, queues.pop().unwrap())
-        };
-
         let event_loop = EventsLoop::new();
-
-        let window = WindowBuilder::new()
+        let surface = WindowBuilder::new()
             .with_dimensions(DEFAULT_WIDTH, DEFAULT_HEIGHT)
             .with_min_dimensions(DEFAULT_WIDTH, DEFAULT_HEIGHT)
             .with_max_dimensions(DEFAULT_WIDTH, DEFAULT_HEIGHT)
             .with_title("neuroflap")
             .build_vk_surface(&event_loop, instance.clone())?;
 
+        let (device, queue) = {
+            let physical_device = choose_physical_device(&instance)?;
+            info!("Using device {:?}", physical_device.name());
+
+            let qf = choose_queue_family(physical_device, &surface)?;
+            let (device, mut queues) = build_device(physical_device, qf)?;
+            ensure!(queues.len() > 0, "Device has no queues");
+            (device, queues.pop().unwrap())
+        };
+
         let (swapchain, images) =
-            make_swapchain(device.clone(), window.clone(), queue.family())?;
+            make_swapchain(device.clone(), surface.clone(), queue.family())?;
+        let (pipeline, render_pass) =
+            build_pipeline(device.clone(), swapchain.clone())?;
 
         let renderer = Renderer {
             device,
             images,
-            instance,
+            pipeline,
             queue,
+            recreate_swapchain: false,
+            render_pass,
+            surface,
             swapchain,
-            window,
         };
         let events = Events::new(event_loop);
         Ok((renderer, events))
@@ -77,12 +85,15 @@ fn choose_physical_device(
 }
 
 // TODO: More complex criteria than "first detected."
-fn choose_queue_family(
-    physical_device: PhysicalDevice,
-) -> Result<QueueFamily, Error> {
+fn choose_queue_family<'a, W>(
+    physical_device: PhysicalDevice<'a>,
+    surface: &Surface<W>,
+) -> Result<QueueFamily<'a>, Error> {
     physical_device
         .queue_families()
-        .find(|qf| qf.supports_graphics())
+        .find(|&qf| {
+            qf.supports_graphics() && surface.is_supported(qf).unwrap_or(false)
+        })
         .ok_or_else(|| err_msg("Your Vulkan doesn't support graphics"))
 }
 
@@ -114,7 +125,7 @@ fn make_swapchain<W>(
     use std::cmp::{max, min};
 
     use vulkano::image::ImageUsage;
-    use vulkano::swapchain::{CompositeAlpha, PresentMode};
+    use vulkano::swapchain::PresentMode;
     use vulkano::sync::SharingMode;
 
     let caps = surface.capabilities(device.physical_device())?;
@@ -126,8 +137,13 @@ fn make_swapchain<W>(
         caps.max_image_count.unwrap_or(2),
     );
     let transform = caps.current_transform;
-    let (format, color_space) = caps.supported_formats[0];
+    let alpha = caps.supported_composite_alpha
+        .iter()
+        .next()
+        .unwrap();
+    let (format, _color_space) = caps.supported_formats[0];
     let usage = ImageUsage {
+        transfer_destination: true,
         color_attachment: true,
         ..ImageUsage::none()
     };
@@ -143,9 +159,52 @@ fn make_swapchain<W>(
         usage,
         sharing_mode,
         transform,
-        CompositeAlpha::Opaque,
+        alpha,
         PresentMode::Fifo,
         true,
         None,
     ).map_err(Error::from)
+}
+
+fn build_pipeline<W>(
+    device: Arc<Device>,
+    swapchain: Arc<Swapchain<W>>,
+) -> Result<
+    (
+        GraphicsPipeline<
+            SingleBufferDefinition<Vertex>,
+            Box<PipelineLayoutAbstract + Send + Sync + 'static>,
+            Arc<RenderPass<impl RenderPassDesc>>,
+        >,
+        Arc<RenderPass<impl RenderPassDesc>>,
+    ),
+    Error,
+> {
+    let render_pass = Arc::new(single_pass_renderpass!(device.clone(),
+                attachments: {
+                    color: {
+                        load: Clear,
+                        store: Store,
+                        format: swapchain.format(),
+                        samples: 1,
+                    }
+                },
+                pass: {
+                    color: [color],
+                    depth_stencil: {}
+                }
+            )?);
+
+    let vert_shader = ::shaders::vert::Shader::load(device.clone())?;
+    let frag_shader = ::shaders::frag::Shader::load(device.clone())?;
+
+    let pipeline = GraphicsPipeline::start()
+        .vertex_input_single_buffer::<Vertex>()
+        .vertex_shader(vert_shader.main_entry_point(), ())
+        .viewports_dynamic_scissors_irrelevant(1)
+        .fragment_shader(frag_shader.main_entry_point(), ())
+        .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
+        .build(device)?;
+
+    Ok((pipeline, render_pass))
 }

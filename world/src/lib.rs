@@ -1,3 +1,6 @@
+//! The world type, as well as other "essential" types for neuroflap.
+#![warn(missing_docs)]
+
 #[macro_use]
 extern crate log;
 

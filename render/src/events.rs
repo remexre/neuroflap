@@ -1,10 +1,8 @@
-use std::mem::swap;
+use std::mem::{replace, swap};
 
 use futures::{Async, Stream};
 use neuroflap_world::Event;
 use winit::{Event as WinitEvent, EventsLoop};
-
-use Renderer;
 
 /// Events from a window.
 pub struct Events {
@@ -38,13 +36,11 @@ impl Stream for Events {
                 }
             });
             buffer.reverse();
-            swap(&mut buffer, &mut self.buffer);
-            debug_assert!(buffer.is_empty());
+            replace(&mut self.buffer, buffer);
 
             if self.buffer.is_empty() {
                 Ok(Async::NotReady)
             } else {
-                debug!("Got {} events", self.buffer.len());
                 self.poll()
             }
         }
@@ -52,15 +48,23 @@ impl Stream for Events {
 }
 
 fn convert_event(event: WinitEvent) -> Option<Event> {
-    use winit::{DeviceEvent, VirtualKeyCode};
+    use winit::{DeviceEvent, ElementState, VirtualKeyCode, WindowEvent};
 
     match event {
-        WinitEvent::DeviceEvent {
-            event: DeviceEvent::Key(key),
-            ..
-        } => match key.virtual_keycode {
-            Some(VirtualKeyCode::Escape) => Some(Event::Quit),
-            Some(VirtualKeyCode::Space) => Some(Event::Jump),
+        WinitEvent::DeviceEvent { event, .. } => match event {
+            DeviceEvent::Button {
+                state: ElementState::Pressed,
+                ..
+            } => Some(Event::Jump),
+            DeviceEvent::Key(key) => match key.virtual_keycode {
+                Some(VirtualKeyCode::Escape) => Some(Event::Quit),
+                Some(VirtualKeyCode::Space) => Some(Event::Jump),
+                _ => None,
+            },
+            _ => None,
+        },
+        WinitEvent::WindowEvent { event, .. } => match event {
+            WindowEvent::Closed => Some(Event::Quit),
             _ => None,
         },
         _ => None,

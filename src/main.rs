@@ -49,6 +49,7 @@ fn main() {
     };
 
     if let Err(err) = result {
+        error!("{:#?}", err);
         error!("{}", err);
         exit(1);
     }

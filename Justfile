@@ -23,4 +23,4 @@ travis-ci:
 	just distbuild
 
 watch TARGET="all":
-	watchexec -cre rs,toml "just {{TARGET}}"
+	watchexec -cre frag,rs,toml,vert "just {{TARGET}}"
