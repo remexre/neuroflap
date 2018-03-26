@@ -7,6 +7,7 @@ extern crate neuroflap_control_player;
 #[cfg(feature = "neuroflap-render")]
 extern crate neuroflap_render;
 extern crate neuroflap_world;
+extern crate rand;
 extern crate stderrlog;
 #[macro_use]
 extern crate structopt;

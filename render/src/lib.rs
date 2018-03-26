@@ -7,6 +7,7 @@ extern crate futures;
 #[macro_use]
 extern crate log;
 extern crate neuroflap_world;
+extern crate rand;
 #[macro_use]
 extern crate vulkano;
 #[macro_use]

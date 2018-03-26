@@ -1,13 +1,14 @@
+mod draw;
+
 use std::sync::Arc;
 
 use failure::Error;
 use neuroflap_world::World;
+use rand::Rng;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
-use vulkano::command_buffer::{AutoCommandBuffer, AutoCommandBufferBuilder,
-                              DynamicState};
+use vulkano::command_buffer::{AutoCommandBufferBuilder, DynamicState};
 use vulkano::format::ClearValue;
 use vulkano::framebuffer::Framebuffer;
-use vulkano::image::ImageViewAccess;
 use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain::{acquire_next_image, AcquireError};
 use vulkano::sync::GpuFuture;
@@ -15,14 +16,22 @@ use vulkano::sync::GpuFuture;
 use Renderer;
 
 #[derive(Clone, Copy, Debug)]
+pub enum Color {
+    BIRD = 0,
+    PIPE = 1,
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Vertex {
+    color: usize,
     position: [f32; 2],
 }
 
 impl Vertex {
     /// Creates a new Vertex.
-    pub fn new(x: f32, y: f32) -> Vertex {
+    pub fn new(x: f32, y: f32, color: Color) -> Vertex {
         Vertex {
+            color: color as usize,
             position: [x, y],
         }
     }
@@ -32,7 +41,10 @@ impl_vertex!(Vertex, position);
 
 impl Renderer {
     /// Renders the world into a frame and swaps buffers.
-    pub fn render_world(&mut self, world: &World) -> Result<(), Error> {
+    pub fn render_world<R: Rng>(
+        &mut self,
+        world: &World<R>,
+    ) -> Result<(), Error> {
         if self.recreate_swapchain {
             let (x, y) = self.surface.window().get_inner_size().unwrap();
             let (swapchain, images) =
@@ -54,27 +66,7 @@ impl Renderer {
             };
 
         let image = self.images[index].clone();
-        let command_buffer = self.draw_world(world, image)?;
 
-        future
-            .then_execute(self.queue.clone(), command_buffer)?
-            .then_swapchain_present(
-                self.queue.clone(),
-                self.swapchain.clone(),
-                index,
-            )
-            .then_signal_fence_and_flush()?
-            .cleanup_finished();
-
-        Ok(())
-    }
-
-    /// Builds a buffer of draw commands for rendering the world.
-    fn draw_world<I: ImageViewAccess + Send + Sync + 'static>(
-        &mut self,
-        world: &World,
-        image: I,
-    ) -> Result<AutoCommandBuffer, Error> {
         let framebuffer = Arc::new(Framebuffer::start(
             self.render_pass.clone(),
         ).add(image)?
@@ -95,20 +87,16 @@ impl Renderer {
         let vertex_buffer = CpuAccessibleBuffer::from_iter(
             self.device.clone(),
             BufferUsage::all(),
-            vec![
-                Vertex::new(-0.5, -0.25),
-                Vertex::new(0.0, 0.5),
-                Vertex::new(0.25, -0.1),
-            ].into_iter(),
+            draw::draw_world(world).into_iter(),
         ).unwrap();
 
-        AutoCommandBufferBuilder::primary_one_time_submit(
+        let command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(
             self.device.clone(),
             self.queue.family(),
         )?.begin_render_pass(
             framebuffer,
             false,
-            vec![ClearValue::Float([0.0, 0.0, 1.0, 1.0])],
+            vec![ClearValue::Float([0.5, 0.5, 1.0, 1.0])],
         )?
             .draw(
                 self.pipeline.clone(),
@@ -118,7 +106,18 @@ impl Renderer {
                 (),
             )?
             .end_render_pass()?
-            .build()
-            .map_err(Error::from)
+            .build()?;
+
+        future
+            .then_execute(self.queue.clone(), command_buffer)?
+            .then_swapchain_present(
+                self.queue.clone(),
+                self.swapchain.clone(),
+                index,
+            )
+            .then_signal_fence_and_flush()?
+            .cleanup_finished();
+
+        Ok(())
     }
 }

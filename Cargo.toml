@@ -18,6 +18,7 @@ log = "0.4.1"
 neuroflap-control-player = { path = "control/player", optional = true }
 neuroflap-render = { path = "render", optional = true }
 neuroflap-world = { path = "world" }
+rand = "0.4.2"
 stderrlog = { git = "https://github.com/cardoe/stderrlog-rs.git" }
 structopt = "0.2.5"
 

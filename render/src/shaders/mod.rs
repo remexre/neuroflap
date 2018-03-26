@@ -9,7 +9,7 @@ pub mod vert {
 pub mod frag {
     #[allow(unused)]
     #[derive(VulkanoShader)]
-    #[ty = "vertex"]
-    #[path = "src/shaders/neuroflap.vert"]
+    #[ty = "fragment"]
+    #[path = "src/shaders/neuroflap.frag"]
     struct Dummy;
 }

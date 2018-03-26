@@ -57,7 +57,9 @@ fn convert_event(event: WinitEvent) -> Option<Event> {
                 ..
             } => Some(Event::Jump),
             DeviceEvent::Key(key) => match key.virtual_keycode {
-                Some(VirtualKeyCode::Escape) => Some(Event::Quit),
+                Some(VirtualKeyCode::Escape) | Some(VirtualKeyCode::Q) => {
+                    Some(Event::Quit)
+                }
                 Some(VirtualKeyCode::Space) => Some(Event::Jump),
                 _ => None,
             },
