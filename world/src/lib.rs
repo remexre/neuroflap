@@ -8,6 +8,7 @@ extern crate futures;
 extern crate log;
 extern crate rand;
 
+mod bounding_box;
 mod event;
 mod util;
 mod world;
@@ -35,7 +36,6 @@ where
     E: Fail,
 {
     let mut world = World::new(rng);
-
     let mut timer = Instant::now();
     loop {
         // Handle events.

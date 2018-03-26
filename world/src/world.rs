@@ -3,6 +3,8 @@ use std::time::Duration;
 use float_ord::FloatOrd;
 use rand::Rng;
 
+use bounding_box::BoundingBox;
+
 /// The height of the gap between the top and bottom pipes.
 pub const GAP_HEIGHT: f32 = 0.3;
 
@@ -22,7 +24,7 @@ pub const SPEED: f32 = 0.25;
 
 /// The state of the entire game world.
 pub struct World<R: Rng> {
-    /// The currently existing pipes.
+    /// The currently existing pipes, as (x, gap-center) pairs.
     pub pipes: Vec<(f32, f32)>,
 
     /// The bird's vertical position.
@@ -52,10 +54,24 @@ impl<R: Rng> World<R> {
 
     /// Checks if the player intersects a pipe or the ground.
     pub fn player_intersects_object(&self) -> bool {
-        self.position == 0.0 || {
-            warn!("TODO check for intersect");
-            false
+        if self.position == 0.0 {
+            return true;
         }
+
+        let bird = BoundingBox {
+            center: (0.5, self.position),
+            height: PLAYER_HEIGHT,
+            width: PLAYER_WIDTH,
+        };
+        self.pipes.iter().any(|&(x, y)| {
+            const H: f32 = GAP_HEIGHT / 2.0;
+            const W: f32 = PIPE_WIDTH / 2.0;
+
+            let bb1 =
+                BoundingBox::from_corners((x - W, 1.0), (x + W, 1.0 - y + H));
+            let bb2 = BoundingBox::from_corners((x - W, 0.0), (x + W, y - H));
+            bird.intersects(bb1) || bird.intersects(bb2)
+        })
     }
 
     /// Simulates the world, given that `dt` has passed since the last call.
