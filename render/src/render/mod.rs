@@ -6,12 +6,13 @@ use failure::Error;
 use neuroflap_world::World;
 use rand::Rng;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer};
+use vulkano::command_buffer::submit::SubmitPresentError;
 use vulkano::command_buffer::{AutoCommandBufferBuilder, DynamicState};
 use vulkano::format::ClearValue;
 use vulkano::framebuffer::Framebuffer;
 use vulkano::pipeline::viewport::Viewport;
 use vulkano::swapchain::{acquire_next_image, AcquireError};
-use vulkano::sync::GpuFuture;
+use vulkano::sync::{FlushError, GpuFuture};
 
 use Renderer;
 
@@ -55,15 +56,33 @@ impl Renderer {
             self.recreate_swapchain = false;
         }
 
-        let (index, future) =
-            match acquire_next_image(self.swapchain.clone(), None) {
-                Ok(x) => x,
-                Err(AcquireError::OutOfDate) => {
-                    self.recreate_swapchain = true;
-                    return Ok(());
-                }
-                Err(err) => return Err(err.into()),
-            };
+        let recreate = self.render_world_inner(world)
+            .map(|()| false)
+            .or_else(|err| match err.downcast() {
+                Ok(AcquireError::OutOfDate) => Ok(true),
+                Ok(err) => Err(err.into()),
+                Err(err) => Err(err),
+            })
+            .or_else(|err| match err.downcast() {
+                Ok(FlushError::OutOfDate) => Ok(true),
+                Ok(err) => Err(err.into()),
+                Err(err) => Err(err),
+            })
+            .or_else(|err| match err.downcast() {
+                Ok(SubmitPresentError::OutOfDate) => Ok(true),
+                Ok(err) => Err(err.into()),
+                Err(err) => Err(err),
+            })?;
+
+        self.recreate_swapchain = recreate;
+        Ok(())
+    }
+
+    fn render_world_inner<R: Rng>(
+        &mut self,
+        world: &World<R>,
+    ) -> Result<(), Error> {
+        let (index, future) = acquire_next_image(self.swapchain.clone(), None)?;
 
         let image = self.images[index].clone();
 
