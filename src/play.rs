@@ -1,11 +1,7 @@
-use std::time::Instant;
-
 use failure::Error;
 use neuroflap_render::Builder;
-use neuroflap_world::{Event, World};
+use neuroflap_world::run_one;
 use rand::StdRng;
-
-use util::take_ready;
 
 /// Options taken by the `play` subcommand.
 #[derive(Debug, StructOpt)]
@@ -14,31 +10,20 @@ pub struct Options {}
 impl Options {
     /// Starts the game in play mode.
     pub fn run(self) -> Result<(), Error> {
-        let mut world = World::new(StdRng::new()?);
+        let mut rng = StdRng::new()?;
         let (mut renderer, mut events) = Builder::default().build()?;
+        loop {
+            let r = run_one(
+                &mut events,
+                |w| renderer.render_world(w),
+                &mut rng,
+            );
 
-        let mut keep_going = true;
-        let mut timer = Instant::now();
-        while keep_going {
-            // Handle events.
-            take_ready(&mut events, |event| {
-                debug!("Got event {:?}", event);
-                match event {
-                    Event::Jump => world.velocity = 0.75,
-                    Event::Quit => keep_going = false,
-                }
-            })?;
-
-            // Update physics.
-            let dt = timer.elapsed();
-            timer = Instant::now();
-            world.simulate(dt);
-
-            // Render the new frame.
-            renderer.render_world(&world)?;
+            match r {
+                Ok(Some(time)) => info!("Got {} sec", time),
+                Ok(None) => return Ok(()),
+                Err(err) => return Err(err),
+            }
         }
-
-        info!("Quitting...");
-        Ok(())
     }
 }

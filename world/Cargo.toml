@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Nathan Ringo <remexre@gmail.com>"]
 
 [dependencies]
+failure = "0.1.1"
 float-ord = "0.2.0"
+futures = "0.1.19"
 log = "0.4.1"
 rand = "0.4.2"

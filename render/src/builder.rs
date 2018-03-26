@@ -39,7 +39,7 @@ impl Builder {
 
         let (device, queue) = {
             let physical_device = choose_physical_device(&instance)?;
-            info!("Using device {:?}", physical_device.name());
+            debug!("Using device {:?}", physical_device.name());
 
             let qf = choose_queue_family(physical_device, &surface)?;
             let (device, mut queues) = build_device(physical_device, qf)?;

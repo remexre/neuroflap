@@ -51,8 +51,11 @@ impl<R: Rng> World<R> {
     }
 
     /// Checks if the player intersects a pipe or the ground.
-    pub fn intersects(&self) -> bool {
-        self.position == 0.0 || unimplemented!()
+    pub fn player_intersects_object(&self) -> bool {
+        self.position == 0.0 || {
+            warn!("TODO check for intersect");
+            false
+        }
     }
 
     /// Simulates the world, given that `dt` has passed since the last call.
