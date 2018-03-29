@@ -1,0 +1,15 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+  - osx
+cache: cargo
+install:
+  - command -v just || cargo install just
+  - command -v cargo-install-update || cargo install cargo-update
+  - cargo install-update -a
+script:
+  - just travis-ci
