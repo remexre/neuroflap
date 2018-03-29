@@ -51,6 +51,14 @@ mod tests {
     use super::BoundingBox;
 
     #[test]
+    fn doesnt_intersect() {
+        let bb1 = BoundingBox::from_corners((1.0, 1.0), (-1.0, -1.0));
+        let bb2 = BoundingBox::from_corners((1.75, 1.75), (1.25, 1.25));
+        assert!(!bb1.intersects(bb2));
+        assert!(!bb2.intersects(bb1));
+    }
+
+    #[test]
     fn from_corners() {
         assert_eq!(
             BoundingBox::from_corners((1.0, 1.0), (-1.0, -1.0)),

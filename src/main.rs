@@ -2,8 +2,8 @@ extern crate failure;
 extern crate futures;
 #[macro_use]
 extern crate log;
-#[cfg(feature = "neuroflap-control-player")]
-extern crate neuroflap_control_player;
+#[cfg(feature = "neuroflap-neat")]
+extern crate neuroflap_neat;
 #[cfg(feature = "neuroflap-render")]
 extern crate neuroflap_render;
 extern crate neuroflap_world;
@@ -56,6 +56,7 @@ fn main() {
 }
 
 #[derive(Debug, StructOpt)]
+#[structopt(raw(global_setting = "structopt::clap::AppSettings::ColoredHelp"))]
 struct Options {
     /// The controller.
     #[structopt(subcommand)]
@@ -89,7 +90,7 @@ enum Subcommand {
 
     /// Starts the game as a simulator for a single already-trained neural net.
     #[cfg(feature = "simulate")]
-    #[structopt(name = "simulate")]
+    #[structopt(name = "sim")]
     Simulate(simulate::Options),
 
     /// Trains for a certain number of generations.

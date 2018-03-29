@@ -5,7 +5,7 @@ authors = ["Nathan Ringo <remexre@gmail.com>"]
 
 [dependencies]
 failure = "0.1.1"
-futures = "0.1.19"
+futures = "0.1.18"
 log = "0.4.1"
 neuroflap-world = { path = "../world" }
 rand = "0.4.2"
