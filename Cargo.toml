@@ -26,4 +26,4 @@ structopt = "0.2.5"
 default = ["play", "simulate", "train"]
 play = ["neuroflap-render"]
 simulate = ["neuroflap-neat", "neuroflap-render"]
-train = []
+train = ["neuroflap-neat"]
