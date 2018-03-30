@@ -1,6 +1,9 @@
+use std::fs::File;
+use std::path::PathBuf;
+
+use bincode::serialize_into;
 use failure::Error;
 use neuroflap_neat::{Params, Population};
-use std::path::PathBuf;
 use structopt::StructOpt;
 use structopt::clap::{App, Arg, ArgMatches};
 
@@ -52,6 +55,8 @@ impl Options {
     /// Creates a new generation file.
     pub fn run(self) -> Result<(), Error> {
         let pop = Population::new(self.params);
-        unimplemented!()
+
+        let f = File::create(self.generation_file)?;
+        serialize_into(f, &pop).map_err(Error::from)
     }
 }

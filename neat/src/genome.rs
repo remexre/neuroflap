@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::iter::FromIterator;
 
 /// The entire genome of an organism.
@@ -51,6 +52,31 @@ impl Genome {
             last = gene.innovation;
         }
         true
+    }
+}
+
+impl Display for Genome {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(fmt, "[")?;
+
+        let mut first = true;
+        for gene in &self.genes {
+            if first {
+                first = false;
+            } else {
+                write!(
+                    fmt,
+                    "; {},{},{},{},{}",
+                    gene.from,
+                    gene.to,
+                    gene.enabled,
+                    gene.weight,
+                    gene.innovation
+                )?;
+            }
+        }
+
+        write!(fmt, "]")
     }
 }
 

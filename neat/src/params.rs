@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter, Result as FmtResult};
+
 use activation::Activation;
 
 /// The parameters used to train a population.
@@ -27,5 +29,16 @@ pub struct Params {
     pub delta_cutoff: f32,
 
     /// The number of members in the population.
+    #[structopt(default_value = "300", long = "population", short = "p")]
     pub population_size: usize,
+}
+
+impl Display for Params {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        write!(
+            fmt,
+            "c1 = {}, c2 = {}, c3 = {}, activation = {}, delta_cutoff = {}, population_size = {}",
+            self.c1, self.c2, self.c3, self.activation, self.delta_cutoff, self.population_size,
+        )
+    }
 }

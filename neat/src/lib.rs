@@ -30,4 +30,4 @@ mod util;
 pub use activation::Activation;
 pub use genome::{Gene, Genome};
 pub use params::Params;
-pub use population::Population;
+pub use population::{Population, PopulationIter};

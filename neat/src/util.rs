@@ -26,10 +26,7 @@ pub mod tofromstr {
                 write!(formatter, "a string")
             }
 
-            fn visit_borrowed_str<E2>(
-                self,
-                v: &'de str,
-            ) -> Result<Self::Value, E2>
+            fn visit_str<E2>(self, v: &str) -> Result<Self::Value, E2>
             where
                 E2: DeError,
             {

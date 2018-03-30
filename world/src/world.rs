@@ -69,7 +69,7 @@ impl<R: Rng> World<R> {
 
             let bb1 =
                 BoundingBox::from_corners((x - W, 1.0), (x + W, 1.0 - y + H));
-            let bb2 = BoundingBox::from_corners((x - W, 0.0), (x + W, y - H));
+            let bb2 = BoundingBox::from_corners((x - W, y - H), (x + W, 0.0));
             bird.intersects(bb1) || bird.intersects(bb2)
         })
     }
@@ -98,7 +98,8 @@ impl<R: Rng> World<R> {
             .map(|x| x.0)
             .unwrap_or(0.0) < 0.5
         {
-            let y = self.rng.gen_range(GAP_HEIGHT, 1.0 - GAP_HEIGHT);
+            let y = self.rng
+                .gen_range(GAP_HEIGHT / 2.0, 1.0 - (GAP_HEIGHT / 2.0));
             self.pipes.push((1.0, y));
         }
 

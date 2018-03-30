@@ -56,12 +56,12 @@ where
         timer = Instant::now();
         world.simulate(dt);
 
+        // Render the new frame.
+        renderer(&world)?;
+
         // Check for lossage.
         if world.player_intersects_object() {
             return Ok(Some(world.survived));
         }
-
-        // Render the new frame.
-        renderer(&world)?;
     }
 }

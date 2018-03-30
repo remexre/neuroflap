@@ -14,13 +14,13 @@ pub struct BoundingBox {
 impl BoundingBox {
     /// Creates a new BoundingBox, given the upper-right and lower-left
     /// corners.
-    pub fn from_corners(ur: (f32, f32), ll: (f32, f32)) -> BoundingBox {
-        let cx = (ur.0 + ll.0) / 2.0;
-        let cy = (ur.1 + ll.1) / 2.0;
+    pub fn from_corners(ul: (f32, f32), br: (f32, f32)) -> BoundingBox {
+        let cx = (ul.0 + br.0) / 2.0;
+        let cy = (ul.1 + br.1) / 2.0;
         BoundingBox {
             center: (cx, cy),
-            height: (ur.1 - ll.1).abs(),
-            width: (ur.0 - ll.0).abs(),
+            height: (ul.1 - br.1).abs(),
+            width: (br.0 - ul.0).abs(),
         }
     }
 
@@ -76,5 +76,23 @@ mod tests {
         let bb2 = BoundingBox::from_corners((0.75, 0.75), (0.25, 0.25));
         assert!(bb1.intersects(bb2));
         assert!(bb2.intersects(bb1));
+    }
+
+    #[test]
+    fn miniintegration() {
+        let bird = BoundingBox {
+            center: (0.5, 0.8),
+            height: 0.05,
+            width: 0.05,
+        };
+
+        let (x, y) = (0.5, 0.35);
+
+        const H: f32 = 0.3 / 2.0;
+        const W: f32 = 0.1 / 2.0;
+
+        let bb1 = BoundingBox::from_corners((x - W, 1.0), (x + W, 1.0 - y + H));
+        let bb2 = BoundingBox::from_corners((x - W, y - H), (x + W, 0.0));
+        assert!(bird.intersects(bb1) || bird.intersects(bb2))
     }
 }

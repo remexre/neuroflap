@@ -1,5 +1,8 @@
+extern crate bincode;
+#[macro_use]
 extern crate failure;
 extern crate futures;
+extern crate inflector;
 #[macro_use]
 extern crate log;
 #[cfg(feature = "neuroflap-neat")]
@@ -36,6 +39,9 @@ fn main() {
         Subcommand::Extract(extract) => extract.run(),
 
         #[cfg(feature = "train")]
+        Subcommand::List(list) => list.run(),
+
+        #[cfg(feature = "train")]
         Subcommand::New(new) => new.run(),
 
         #[cfg(feature = "play")]
@@ -49,7 +55,6 @@ fn main() {
     };
 
     if let Err(err) = result {
-        error!("{:#?}", err);
         error!("{}", err);
         exit(1);
     }
@@ -77,6 +82,11 @@ enum Subcommand {
     #[cfg(feature = "train")]
     #[structopt(name = "extract")]
     Extract(train::ExtractOptions),
+
+    /// Lists the neural nets in a generation file.
+    #[cfg(feature = "train")]
+    #[structopt(name = "list")]
+    List(train::ListOptions),
 
     /// Creates a new generation file.
     #[cfg(feature = "train")]

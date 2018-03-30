@@ -12,6 +12,8 @@ version = "0.1.0"
 authors = ["Nathan Ringo <remexre@gmail.com>"]
 
 [dependencies]
+Inflector = "0.11.2"
+bincode = "1.0.0"
 failure = "0.1.1"
 futures = "0.1.18"
 log = "0.4.1"
