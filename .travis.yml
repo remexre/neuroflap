@@ -3,9 +3,7 @@ rust:
   - stable
   - beta
   - nightly
-os:
-  - linux
-  - osx
+os: linux
 cache: cargo
 install:
   - command -v just || cargo install just
