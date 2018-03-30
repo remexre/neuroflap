@@ -1,3 +1,4 @@
+extern crate atomicwrites;
 extern crate bincode;
 #[macro_use]
 extern crate failure;

@@ -15,6 +15,7 @@ pub struct Population {
     /// The parameters used for the next generation.
     pub params: Params,
 
+    generation: usize,
     species: Vec<Species>,
 }
 
@@ -22,9 +23,15 @@ impl Population {
     /// Creates a new population with the given parameters.
     pub fn new(params: Params) -> Population {
         Population {
+            generation: 0,
             params,
             species: vec![Species::with_size(params.population_size)],
         }
+    }
+
+    /// Returns the generation number this population is at.
+    pub fn generation(&self) -> usize {
+        self.generation
     }
 
     /// Returns the number of individuals in the population.
@@ -34,9 +41,9 @@ impl Population {
 
     /// Runs a single generation. The given function evaluates an individual's
     /// fitness.
-    pub fn run_generation<E, F>(&self, fitness: F) -> Result<Population, E>
+    pub fn run_generation<E, F>(&self, mut fitness: F) -> Result<Population, E>
     where
-        F: Fn(&Genome) -> Result<f32, E>,
+        F: FnMut(&Genome) -> Result<f32, E>,
     {
         unimplemented!()
     }

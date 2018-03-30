@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 
 /// The entire genome of an organism.
 ///
-/// Note that all genomes have the same nodes 0-5, with 1-5 being inputs and 0
+/// Note that all genomes have the same nodes 0-4, with 1-4 being inputs and 0
 /// being the output. Other nodes are inferred by being referenced.
 #[derive(Clone, Debug, Deserialize, Index, PartialEq, Serialize)]
 pub struct Genome {
@@ -37,7 +37,7 @@ impl Genome {
         let singleton_to: HashSet<usize> =
             tos.difference(&froms).cloned().collect();
 
-        let froms: HashSet<usize> = HashSet::from_iter(1..=5);
+        let froms: HashSet<usize> = HashSet::from_iter(1..=4);
         let tos: HashSet<usize> = HashSet::from_iter(Some(0));
 
         if singleton_from != froms || singleton_to != tos {

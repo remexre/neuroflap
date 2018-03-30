@@ -25,7 +25,7 @@ impl Genome {
 
 impl Network {
     /// Calculates the output value of the network for a given input vector.
-    pub fn calculate(ins: [f32; 5]) -> f32 {
+    pub fn calculate(&self, ins: [f32; 4]) -> f32 {
         unimplemented!()
     }
 }
