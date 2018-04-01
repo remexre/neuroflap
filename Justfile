@@ -1,18 +1,21 @@
-all:
-	cargo check --all
+all: check
 	cargo doc --all
 	cargo build --all
 	cargo test --all
 
+check:
+	cargo check --all
+
 distbuild:
 	cargo build --release --features=play,simulate,train
 
-play:
-	cargo run --release play
 make-and-train:
 	mkdir -p test-data/results
 	cargo run --release new test-data/test.gen
 	cargo run --release train --results test-data/results test-data/test.gen
+
+play:
+	cargo run --release play
 
 test-with-features FEATURES:
 	cargo build --no-default-features --features={{FEATURES}}

@@ -45,6 +45,11 @@ impl Population {
     where
         F: FnMut(&Genome) -> Result<f32, E>,
     {
+        let fitnesses: Vec<f32> = self.species
+            .iter()
+            .flat_map(|s| s)
+            .map(fitness)
+            .collect::<Result<_, E>>()?;
         unimplemented!()
     }
 }

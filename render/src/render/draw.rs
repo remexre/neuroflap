@@ -14,12 +14,10 @@ pub fn draw_world<R: Rng>(world: &World<R>) -> Vec<Vertex> {
 }
 
 fn draw_bird(position: f32, vertices: &mut Vec<Vertex>) {
-    const W: f32 = PLAYER_WIDTH / 2.0;
-    const H: f32 = PLAYER_HEIGHT / 2.0;
-
-    draw_rect_corners(
-        (0.5 - W, position + H),
-        (0.5 + W, position - H),
+    draw_rect_wh(
+        (0.5, position),
+        PLAYER_WIDTH,
+        PLAYER_HEIGHT,
         BIRD,
         vertices,
     );
@@ -58,10 +56,12 @@ fn draw_rect_wh(
     color: Color,
     vertices: &mut Vec<Vertex>,
 ) {
+    let w = width / 2.0;
+    let h = height / 2.0;
     draw_rect_corners(
-        (center.0 - width, center.1 + height),
-        (center.0 + width, center.1 - height),
+        (center.0 - w, center.1 + h),
+        (center.0 + w, center.1 - h),
         color,
         vertices,
-    )
+    );
 }

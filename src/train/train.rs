@@ -1,10 +1,11 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::{channel, TryRecvError};
 
 use atomicwrites::{AtomicFile, Error as AtomicError, OverwriteBehavior};
 use bincode::{deserialize_from, serialize_into};
 use failure::Error;
-use futures::{Async, Stream, stream::poll_fn, sync::mpsc::channel};
+use futures::{Async, Stream, stream::poll_fn};
 use inflector::numbers::ordinalize::ordinalize;
 use neuroflap_neat::Population;
 use neuroflap_world::{run_one, Event};
@@ -33,15 +34,18 @@ impl Options {
         let mut rng = XorShiftRng::new_unseeded();
 
         loop {
+            info!("Training generation {}...", pop.generation());
             pop = pop.run_generation(|genome| {
-                let network = genome.build_network();
-                let (mut send, mut recv) = channel(1);
+                let network = genome.build_network(pop.params.activation);
+                let (mut send, mut recv) = channel();
                 run_one(
                     poll_fn(|| -> Result<_, !> {
-                        match recv.poll() {
-                            Ok(Async::Ready(x)) => Ok(Async::Ready(x)),
-                            Ok(Async::NotReady) => Ok(Async::NotReady),
-                            Err(()) => Ok(Async::Ready(None)),
+                        match recv.try_recv() {
+                            Ok(x) => Ok(Async::Ready(Some(x))),
+                            Err(TryRecvError::Empty) => Ok(Async::NotReady),
+                            Err(TryRecvError::Disconnected) => {
+                                Ok(Async::Ready(None))
+                            }
                         }
                     }),
                     |world| {
@@ -61,7 +65,7 @@ impl Options {
                         ]);
 
                         if out > 0.5 {
-                            send.try_send(Event::Jump)?;
+                            send.send(Event::Jump)?;
                         }
                         Ok(())
                     },
