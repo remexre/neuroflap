@@ -13,7 +13,7 @@ mod event;
 mod util;
 mod world;
 
-use std::time::Instant;
+use std::time::Duration;
 
 use failure::{Error, Fail};
 use futures::Stream;
@@ -24,19 +24,20 @@ pub use world::{World, GAP_HEIGHT, PIPE_WIDTH, PLAYER_HEIGHT, PLAYER_WIDTH};
 
 /// Runs a single instance of the game, with the given controller, renderer,
 /// and RNG.
-pub fn run_one<Controller, Renderer, Rng, E>(
+pub fn run_one<Controller, Renderer, Rng, Timer, E>(
     mut controller: Controller,
     mut renderer: Renderer,
     rng: Rng,
+    mut timer: Timer,
 ) -> Result<Option<f32>, Error>
 where
     Controller: Stream<Item = Event, Error = E>,
     Renderer: FnMut(&World<Rng>) -> Result<(), Error>,
     Rng: ::rand::Rng,
+    Timer: FnMut() -> Duration,
     E: Fail,
 {
     let mut world = World::new(rng);
-    let mut timer = Instant::now();
     loop {
         // Handle events.
         let mut quit = false;
@@ -52,9 +53,7 @@ where
         }
 
         // Update physics.
-        let dt = timer.elapsed();
-        timer = Instant::now();
-        world.simulate(dt);
+        world.simulate(timer());
 
         // Render the new frame.
         renderer(&world)?;

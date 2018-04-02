@@ -2,6 +2,8 @@ mod iter;
 
 use std::ops::{Index, IndexMut};
 
+use rand::Rng;
+
 use activation::Activation;
 use genome::Genome;
 use params::Params;
@@ -39,17 +41,41 @@ impl Population {
         self.species.iter().map(|s| s.len()).sum()
     }
 
+    /// Mutates a population.
+    fn mutate<I: FnMut() -> usize, R: Rng>(&mut self, r: &mut R, mut inno: I) {
+        for i in 0..self.len() {
+            if r.next_f32() < self.params.mutation_rate {
+                // TODO Avoid the clone.
+                let mut genome = self[i].clone();
+                genome.mutate(r, &mut inno, &self.params);
+                self[i] = genome;
+            }
+        }
+    }
+
     /// Runs a single generation. The given function evaluates an individual's
     /// fitness.
-    pub fn run_generation<E, F>(&self, mut fitness: F) -> Result<Population, E>
+    pub fn run_generation<E, F, I, R>(
+        &self,
+        r: &mut R,
+        mut fitness: F,
+        inno: I,
+    ) -> Result<Population, E>
     where
         F: FnMut(&Genome) -> Result<f32, E>,
+        I: FnMut() -> usize,
+        R: Rng,
     {
-        let fitnesses: Vec<f32> = self.species
+        let mut pop = self.clone();
+        pop.mutate(r, inno);
+
+        let fitnesses = pop.species
             .iter()
             .flat_map(|s| s)
             .map(fitness)
-            .collect::<Result<_, E>>()?;
+            .collect::<Result<Vec<f32>, E>>()?;
+
+        println!("{:#?}", fitnesses);
         unimplemented!()
     }
 }

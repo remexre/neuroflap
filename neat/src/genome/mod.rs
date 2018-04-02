@@ -1,6 +1,12 @@
+mod mutate;
+
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::iter::FromIterator;
+
+use rand::Rng;
+
+use params::Params;
 
 /// The entire genome of an organism.
 ///
@@ -23,6 +29,21 @@ impl Genome {
     /// Returns the number of genes in the genome.
     pub fn len(&self) -> usize {
         self.genes.len()
+    }
+
+    /// Performs a random mutation.
+    pub fn mutate<I: FnMut() -> usize, R: Rng>(
+        &mut self,
+        r: &mut R,
+        inno: I,
+        params: &Params,
+    ) {
+        match r.gen_range(0, 3) {
+            0 => self.mutate_add_connection(r, inno),
+            1 => self.mutate_add_node(r, inno),
+            2 => self.mutate_reweight(r, params),
+            _ => unreachable!(),
+        }
     }
 
     /// Returns whether this represents a valid genome.

@@ -1,15 +1,18 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, TryRecvError};
+use std::time::Duration;
 
 use atomicwrites::{AtomicFile, Error as AtomicError, OverwriteBehavior};
 use bincode::{deserialize_from, serialize_into};
 use failure::Error;
-use futures::{Async, Stream, stream::poll_fn};
+use futures::{Async, stream::poll_fn};
 use inflector::numbers::ordinalize::ordinalize;
 use neuroflap_neat::Population;
 use neuroflap_world::{run_one, Event};
 use rand::XorShiftRng;
+
+use util::SharedRng;
 
 /// Options taken by the `train` subcommand.
 #[derive(Debug, StructOpt)]
@@ -31,47 +34,57 @@ impl Options {
             deserialize_from(f)?
         };
 
-        let mut rng = XorShiftRng::new_unseeded();
+        let mut innovation = 0;
+        let mut rng = SharedRng::new(XorShiftRng::new_unseeded());
 
         loop {
             info!("Training generation {}...", pop.generation());
-            pop = pop.run_generation(|genome| {
-                let network = genome.build_network(pop.params.activation);
-                let (mut send, mut recv) = channel();
-                run_one(
-                    poll_fn(|| -> Result<_, !> {
-                        match recv.try_recv() {
-                            Ok(x) => Ok(Async::Ready(Some(x))),
-                            Err(TryRecvError::Empty) => Ok(Async::NotReady),
-                            Err(TryRecvError::Disconnected) => {
-                                Ok(Async::Ready(None))
+            pop = pop.run_generation(
+                &mut rng.clone(),
+                |genome| {
+                    let network = genome.build_network(pop.params.activation);
+                    let (send, recv) = channel();
+                    run_one(
+                        poll_fn(|| -> Result<_, !> {
+                            match recv.try_recv() {
+                                Ok(x) => Ok(Async::Ready(Some(x))),
+                                Err(TryRecvError::Empty) => Ok(Async::NotReady),
+                                Err(TryRecvError::Disconnected) => {
+                                    Ok(Async::Ready(None))
+                                }
                             }
-                        }
-                    }),
-                    |world| {
-                        let (next_pipe_x, next_pipe_y) = world
-                            .pipes
-                            .iter()
-                            .cloned()
-                            .filter(|&(x, _)| x >= 0.5)
-                            .next()
-                            .unwrap_or((0.0, 0.0));
+                        }),
+                        |world| {
+                            let (next_pipe_x, next_pipe_y) = world
+                                .pipes
+                                .iter()
+                                .cloned()
+                                .filter(|&(x, _)| x >= 0.5)
+                                .next()
+                                .unwrap_or((0.0, 0.0));
+                            debug!("{} {}", next_pipe_x, next_pipe_y);
 
-                        let out = network.calculate([
-                            world.position,
-                            next_pipe_x,
-                            next_pipe_y,
-                            world.velocity,
-                        ]);
+                            let out = network.calculate([
+                                world.position,
+                                next_pipe_x,
+                                next_pipe_y,
+                                world.velocity,
+                            ]);
 
-                        if out > 0.5 {
-                            send.send(Event::Jump)?;
-                        }
-                        Ok(())
-                    },
-                    &mut rng,
-                ).map(|s| s.unwrap())
-            })?;
+                            if out > 0.5 {
+                                send.send(Event::Jump)?;
+                            }
+                            Ok(())
+                        },
+                        &mut rng,
+                        || Duration::from_millis(50),
+                    ).map(|s| s.unwrap())
+                },
+                || {
+                    innovation += 1;
+                    innovation
+                },
+            )?;
 
             info!(
                 "Finished training {} generation",

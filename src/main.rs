@@ -22,6 +22,7 @@ mod play;
 mod simulate;
 #[cfg(feature = "train")]
 mod train;
+mod util;
 
 use std::process::exit;
 

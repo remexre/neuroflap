@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::cmp::max;
 
 use activation::Activation;
 use genome::Genome;
@@ -22,7 +22,7 @@ impl Genome {
             .max()
             .unwrap_or(0);
 
-        let mut neurons = vec![Neuron::default(); min(to_max + 1, 4)];
+        let mut neurons = vec![Neuron::default(); max(to_max + 1, 5)];
         for gene in iter {
             neurons[gene.to]
                 .incoming
@@ -40,6 +40,9 @@ impl Network {
     /// Calculates the output value of the network for a given input vector.
     pub fn calculate(&self, ins: [f32; 4]) -> f32 {
         let mut values = vec![None; self.neurons.len()];
+        for (i, &x) in ins.iter().enumerate() {
+            values[i + 1] = Some(x);
+        }
 
         fn search(
             n: usize,
@@ -51,7 +54,17 @@ impl Network {
                 return;
             }
 
-            unimplemented!()
+            let neuron = &neurons[n];
+            for &(i, _) in &neuron.incoming {
+                search(i, activation, neurons, values);
+            }
+
+            let v = neuron
+                .incoming
+                .iter()
+                .map(|&(i, w)| values[i].unwrap() * w)
+                .sum();
+            values[n] = Some(v);
         }
 
         search(0, self.activation, &self.neurons, &mut values);

@@ -28,6 +28,18 @@ pub struct Params {
     #[structopt(default_value = "3.0", long = "delta-cutoff", short = "d")]
     pub delta_cutoff: f32,
 
+    /// The chance an individual is mutated.
+    #[structopt(default_value = "0.5", long = "mutation-rate", short = "m")]
+    pub mutation_rate: f32,
+
+    /// The maximum magnitude by which a reweight mutation affects a gene.
+    #[structopt(default_value = "0.5", long = "reweight-amount")]
+    pub reweight_amount: f32,
+
+    /// The chance an individual gene is mutated during a reweight mutation.
+    #[structopt(default_value = "0.5", long = "reweight-rate")]
+    pub reweight_rate: f32,
+
     /// The number of members in the population.
     #[structopt(default_value = "300", long = "population", short = "p")]
     pub population_size: usize,
