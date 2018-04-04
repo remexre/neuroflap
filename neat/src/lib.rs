@@ -19,8 +19,8 @@ extern crate strum;
 extern crate strum_macros;
 
 mod activation;
+mod crossover;
 mod genome;
-mod mating;
 mod network;
 mod params;
 mod population;

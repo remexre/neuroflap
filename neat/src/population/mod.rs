@@ -4,7 +4,7 @@ use std::ops::{Index, IndexMut};
 
 use rand::Rng;
 
-use activation::Activation;
+use crossover::classify_species;
 use genome::Genome;
 use params::Params;
 use species::Species;
@@ -18,6 +18,7 @@ pub struct Population {
     pub params: Params,
 
     generation: usize,
+    innovation: usize,
     species: Vec<Species>,
 }
 
@@ -26,6 +27,7 @@ impl Population {
     pub fn new(params: Params) -> Population {
         Population {
             generation: 0,
+            innovation: 0,
             params,
             species: vec![Species::with_size(params.population_size)],
         }
@@ -55,28 +57,38 @@ impl Population {
 
     /// Runs a single generation. The given function evaluates an individual's
     /// fitness.
-    pub fn run_generation<E, F, I, R>(
+    pub fn run_generation<E, F, R>(
         &self,
         r: &mut R,
-        mut fitness: F,
-        inno: I,
+        fitness: F,
     ) -> Result<Population, E>
     where
         F: FnMut(&Genome) -> Result<f32, E>,
-        I: FnMut() -> usize,
         R: Rng,
     {
         let mut pop = self.clone();
-        pop.mutate(r, inno);
+        pop.generation += 1;
 
-        let fitnesses = pop.species
+        let mut inno = pop.innovation;
+        pop.mutate(r, || {
+            inno += 1;
+            inno
+        });
+        pop.innovation = inno;
+
+        let genomes = pop.species
+            .into_iter()
+            .flat_map(|s| s.0)
+            .collect::<Vec<Genome>>();
+
+        let fitnesses = genomes
             .iter()
-            .flat_map(|s| s)
             .map(fitness)
             .collect::<Result<Vec<f32>, E>>()?;
 
-        println!("{:#?}", fitnesses);
-        unimplemented!()
+        pop.species = classify_species(r, genomes, &self.params, &self.species);
+        // TODO: Actually crossover.
+        Ok(pop)
     }
 }
 

@@ -36,22 +36,47 @@ impl Genome {
     }
 }
 
+#[derive(Clone, Copy)]
+enum State {
+    White,
+    Gray,
+    Black(f32),
+}
+
+impl State {
+    fn to_option(self) -> Option<f32> {
+        match self {
+            State::Black(x) => Some(x),
+            _ => None,
+        }
+    }
+}
+
 impl Network {
     /// Calculates the output value of the network for a given input vector.
     pub fn calculate(&self, ins: [f32; 4]) -> f32 {
-        let mut values = vec![None; self.neurons.len()];
+        let mut values = vec![State::White; self.neurons.len()];
         for (i, &x) in ins.iter().enumerate() {
-            values[i + 1] = Some(x);
+            values[i + 1] = State::Black(x);
         }
 
         fn search(
             n: usize,
             activation: Activation,
             neurons: &[Neuron],
-            values: &mut [Option<f32>],
+            values: &mut [State],
         ) {
-            if values[n].is_some() {
-                return;
+            match values[n] {
+                State::Black(_) => {
+                    return;
+                }
+                State::Gray => {
+                    println!("self-edge?");
+                    return;
+                }
+                State::White => {
+                    values[n] = State::Gray;
+                }
             }
 
             let neuron = &neurons[n];
@@ -62,13 +87,13 @@ impl Network {
             let v = neuron
                 .incoming
                 .iter()
-                .map(|&(i, w)| values[i].unwrap() * w)
+                .map(|&(i, w)| values[i].to_option().unwrap() * w)
                 .sum();
-            values[n] = Some(v);
+            values[n] = State::Black(v);
         }
 
         search(0, self.activation, &self.neurons, &mut values);
-        values[0].unwrap_or(0.0)
+        values[0].to_option().unwrap_or(0.0)
     }
 }
 

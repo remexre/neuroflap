@@ -11,7 +11,7 @@ distbuild:
 
 make-and-train:
 	mkdir -p test-data/results
-	cargo run --release new test-data/test.gen
+	cargo run --release new test-data/test.gen -p 1
 	cargo run --release train --results test-data/results test-data/test.gen
 
 play:
